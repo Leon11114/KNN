@@ -1,0 +1,58 @@
+# подключаем библиотеку pandas
+import pandas as pd
+
+# подключаем датасет
+df = pd.read_csv('train.csv')
+
+# анализируем датасет
+# df.info()
+# print(df.head())
+# print(df.isna().sum())
+
+# изучаем целевой признак (узнаём сколько групп в столбике price_range)
+# print(df['price_range'].value_counts())
+
+
+X = df.drop('price_range',axis=1)
+y = df['price_range']
+
+# разделяем тестовые и тренировочные данные
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X,y, test_size = 0.2)
+
+# тренируем модель по алгоритму KNN
+from sklearn.neighbors import KNeighborsClassifier
+knn = KNeighborsClassifier(n_neighbors=15) # выбираем кол-во соседей
+knn.fit(X_train,y_train) # делаем предсказания
+
+# получаем предсказания по тестовым данным
+y_pred = knn.score(X_test, y_test)
+print('Процент верных предсказаний: ', round(y_pred*100,2), '%')
+
+def grafic():
+    import numpy as np
+    import matplotlib.pyplot as plt
+    error_rate = []
+    for i in range(1,20):
+
+        knn = KNeighborsClassifier(n_neighbors=i)
+        knn.fit(X_train,y_train)
+        pred_i = knn.predict(X_test)
+        error_rate.append(np.mean(pred_i!=y_test))
+
+    # визуализируем показатель ошибки
+    plt.figure(figsize =(10,6))
+    plt.plot(range(1,20),error_rate,color='blue',linestyle='dashed',marker='o', markerfacecolor='red',markersize=5)
+    plt.title('Зависимость ошибки от числа ближайших соседей')
+    plt.xlabel('Число ближайшие соседи')
+    plt.ylabel('Значение ошибки')
+    plt.show()
+
+    # создадим новый датафрейм с предсказанными и известными результатами
+    y_pred2 = knn.predict(X_test)
+    df2 = pd.DataFrame({'know':y_test,'predicted':y_pred2})
+    print(df2.head(20))
+
+    df2.value_counts().plot(kind='pie',autopct='%1.1f%%')
+    plt.show()
+grafic()
